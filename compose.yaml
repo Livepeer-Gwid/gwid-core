@@ -11,10 +11,10 @@ services:
     volumes:
       - .:/usr/src/app
       - /usr/src/app/tmp
-    command: air -c .air.toml
+    command: ./startup.sh
     networks:
       - gwid-network
-    restart: unless-stopped
+    # restart: unless-stopped
 
 networks:
   gwid-network:
