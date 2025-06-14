@@ -1,0 +1,21 @@
+services:
+  gwid:
+    build: .
+    container_name: gwid-core
+    working_dir: /usr/src/app
+    ports:
+      - 5000:5000
+    env_file:
+      - path: .env
+        required: true
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/tmp
+    command: air -c .air.toml
+    networks:
+      - gwid-network
+    restart: unless-stopped
+
+networks:
+  gwid-network:
+    driver: bridge
