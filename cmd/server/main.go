@@ -4,20 +4,26 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
+	"gwid.io/gwid-core/internal/config"
+	"gwid.io/gwid-core/internal/di"
+	"gwid.io/gwid-core/internal/router"
 )
 
 func main() {
-	router := gin.Default()
+	conf, err := config.LoadConfig()
+	if err != nil {
+		log.Fatalf("failed to load configuration %v", err)
+	}
 
-	router.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "hi from gwid",
-		})
-	})
+	gin.SetMode(conf.GinMode)
 
-	log.Printf("Server running on %s\n", ":5000")
+	container := di.NewContainer(conf)
 
-	if err := router.Run(":5000"); err != nil {
+	router := router.SetupRoutes(container)
+
+	log.Printf("Server running on %s\n", conf.GetServerAddress())
+
+	if err := router.Run(conf.GetServerAddress()); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }

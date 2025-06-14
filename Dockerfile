@@ -6,10 +6,7 @@ WORKDIR /usr/src/app
 
 COPY go.mod go.sum ./
 
-RUN <<EOF
-go mod tidy
-go install github.com/air-verse/air@latest
-EOF
+RUN go install github.com/air-verse/air@latest
 
 COPY . .
 
