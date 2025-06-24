@@ -28,5 +28,5 @@ go build -o ./cmd/server/main.go
 
 ```bash
 make build
-make dev
+make dev-docker
 ```

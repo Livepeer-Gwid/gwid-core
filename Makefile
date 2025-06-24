@@ -4,7 +4,10 @@ MAIN_FILE = "./cmd/server/main.go"
 
 TMP_DIR = "tmp"
 
-dev:
+dev: 
+	air -c .air.toml
+
+dev-docker:
 	docker compose up
 
 down:
