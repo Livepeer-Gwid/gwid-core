@@ -5,6 +5,7 @@ MAIN_FILE = "./cmd/server/main.go"
 TMP_DIR = "tmp"
 
 dev: 
+	go mod tidy
 	air -c .air.toml
 
 dev-docker:

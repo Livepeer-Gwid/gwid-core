@@ -13,6 +13,7 @@ type Config struct {
 	Environment        string
 	Port               string
 	GinMode            string
+	JwtSecret          string
 	DevPostgresConfig  PostgresConfig
 	ProdPostgresConfig PostgresConfig
 }
@@ -35,6 +36,7 @@ func LoadConfig() (*Config, error) {
 		Environment: GetEnv("ENVIRONMENT", "development"),
 		Port:        GetEnv("PORT", "5000"),
 		GinMode:     GetEnv("GIN_MODE", "debug"),
+		JwtSecret:   GetEnv("JWT_SECRET", "the-fallback-key"),
 		DevPostgresConfig: PostgresConfig{
 			Host:         GetEnv("DEV_DB_HOST", "localhost"),
 			Port:         GetEnv("DEV_DB_PORT", "5432"),
