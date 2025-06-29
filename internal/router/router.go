@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gwid.io/gwid-core/internal/di"
 	"gwid.io/gwid-core/internal/middleware"
+	"gwid.io/gwid-core/internal/types"
 )
 
 func setupRouteConfig(router *gin.Engine) {
@@ -44,6 +45,12 @@ func SetupRoutes(container *di.Container) *gin.Engine {
 			"message": "pong",
 		})
 	})
+
+	auth := router.Group("/api/v1/auth")
+	{
+		auth.POST("/signup", middleware.ValidateRequestMiddleware[types.SignupReq](), container.AuthController.SignUp)
+		auth.POST("/login", middleware.ValidateRequestMiddleware[types.LoginReq](), container.AuthController.Login)
+	}
 
 	router.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{

@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"gwid.io/gwid-core/internal/config"
+	"gwid.io/gwid-core/internal/models"
 )
 
 var DB *gorm.DB
@@ -28,7 +29,7 @@ func InitDB(conf *config.Config) {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	if err := DB.AutoMigrate(); err != nil {
+	if err := DB.AutoMigrate(&models.User{}); err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)
 	}
 
