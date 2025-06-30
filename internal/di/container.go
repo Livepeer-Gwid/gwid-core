@@ -16,6 +16,8 @@ type Container struct {
 	AuthService    services.AuthService
 	JwtService     services.JWTService
 	AuthController controllers.AuthController
+	UserService    services.UserService
+	UserController controllers.UserController
 }
 
 func NewContainer(conf *config.Config) *Container {
@@ -31,11 +33,17 @@ func NewContainer(conf *config.Config) *Container {
 
 	authController := controllers.NewAuthController(authService)
 
+	userService := services.NewUserService(userRepository)
+
+	userController := controllers.NewUserController(userService)
+
 	return &Container{
 		DB:             db,
 		UserRepository: userRepository,
 		AuthService:    authService,
 		JwtService:     jwtService,
 		AuthController: authController,
+		UserService:    userService,
+		UserController: userController,
 	}
 }
