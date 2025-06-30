@@ -52,6 +52,12 @@ func SetupRoutes(container *di.Container) *gin.Engine {
 		auth.POST("/login", middleware.ValidateRequestMiddleware[types.LoginReq](), container.AuthController.Login)
 	}
 
+	user := router.Group("/api/v1/user")
+	user.Use(middleware.AuthMiddleware())
+	{
+		user.GET("/profile", container.UserController.GetCurrentUserProfile)
+	}
+
 	router.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{
 			"success": false,
