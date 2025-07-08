@@ -1,3 +1,4 @@
+// Package middleware adds middleware to controllers
 package middleware
 
 import (
@@ -6,8 +7,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"gwid.io/gwid-core/internals/config"
-	"gwid.io/gwid-core/internals/types"
+	"gwid.io/gwid-core/internal/config"
+	"gwid.io/gwid-core/internal/types"
 )
 
 func AuthMiddleware() gin.HandlerFunc {

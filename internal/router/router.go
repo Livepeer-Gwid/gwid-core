@@ -1,3 +1,4 @@
+// Package router sets up application router config
 package router
 
 import (
@@ -8,11 +9,13 @@ import (
 	"github.com/dvwright/xss-mw"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"gwid.io/gwid-core/internals/config"
-	"gwid.io/gwid-core/internals/middleware"
+	"gwid.io/gwid-core/internal/config"
+	"gwid.io/gwid-core/internal/controllers"
+	"gwid.io/gwid-core/internal/middleware"
+	"gwid.io/gwid-core/internal/types"
 )
 
-func NewRouter(cfg *config.Config) *gin.Engine {
+func NewRouter(cfg *config.Config, authController *controllers.AuthController, userController *controllers.UserController, gatewayController *controllers.GatewayController) *gin.Engine {
 	router := gin.Default()
 
 	gin.SetMode(cfg.GinMode)
@@ -26,6 +29,24 @@ func NewRouter(cfg *config.Config) *gin.Engine {
 			"message": "GWID core is running",
 		})
 	})
+
+	auth := router.Group("/api/v1/auth")
+	{
+		auth.POST("/signup", middleware.ValidateRequestMiddleware[types.SignupReq](), authController.SignUp)
+		auth.POST("/login", middleware.ValidateRequestMiddleware[types.LoginReq](), authController.Login)
+	}
+
+	user := router.Group("/api/v1/user")
+	user.Use(middleware.AuthMiddleware())
+	{
+		user.GET("/profile", userController.GetCurrentUserProfile)
+	}
+
+	gateway := router.Group("/api/v1/gateway")
+	gateway.Use(middleware.AuthMiddleware())
+	{
+		gateway.POST("/", middleware.ValidateRequestMiddleware[types.DeployGatewayPayloadReq](), gatewayController.CreateGateway)
+	}
 
 	return router
 }

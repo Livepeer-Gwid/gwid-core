@@ -8,7 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
-	"gwid.io/gwid-core/internals/config"
+	"gwid.io/gwid-core/internal/config"
 )
 
 func NewGinServer(router *gin.Engine, cfg *config.Config) *http.Server {
@@ -32,6 +32,7 @@ func RunServer(lc fx.Lifecycle, server *http.Server, cfg *config.Config) {
 					log.Fatalf("Failed to start server: %v", err)
 				}
 			}()
+
 			return nil
 		},
 		OnStop: func(ctx context.Context) error {

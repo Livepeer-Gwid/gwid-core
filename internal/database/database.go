@@ -1,3 +1,4 @@
+// Package database sets up database and models
 package database
 
 import (
@@ -6,8 +7,8 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"gwid.io/gwid-core/internals/config"
-	"gwid.io/gwid-core/internals/models"
+	"gwid.io/gwid-core/internal/config"
+	"gwid.io/gwid-core/internal/models"
 )
 
 func NewDatabase(cfg *config.Config) *gorm.DB {
