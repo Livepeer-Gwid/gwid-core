@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
 	"gwid.io/gwid-core/internal/config"
+	"gwid.io/gwid-core/internal/cron"
 )
 
 func NewGinServer(router *gin.Engine, cfg *config.Config) *http.Server {
@@ -23,7 +24,7 @@ func NewGinServer(router *gin.Engine, cfg *config.Config) *http.Server {
 	return server
 }
 
-func RunServer(lc fx.Lifecycle, server *http.Server, cfg *config.Config) {
+func RunServer(lc fx.Lifecycle, server *http.Server, cfg *config.Config, cron *cron.CronService) {
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			log.Printf("Starting server on port %s", cfg.Port)
@@ -32,6 +33,9 @@ func RunServer(lc fx.Lifecycle, server *http.Server, cfg *config.Config) {
 					log.Fatalf("Failed to start server: %v", err)
 				}
 			}()
+
+			log.Println("Starting cron service")
+			cron.StartScheduler()
 
 			return nil
 		},

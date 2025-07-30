@@ -1,9 +1,13 @@
+// Package tasks
 package tasks
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
+	"os/exec"
 	"time"
 
 	"github.com/hibiken/asynq"
@@ -23,7 +27,7 @@ func (gt *GatewayTask) NewDeployGatewayTask(payload types.DeployGatewayPayload) 
 		return nil, err
 	}
 
-	task := asynq.NewTask(utils.TypeDeployGateway, deploymentPayload, asynq.MaxRetry(5), asynq.Timeout(5*time.Minute))
+	task := asynq.NewTask(utils.TypeDeployGateway, deploymentPayload, asynq.MaxRetry(1), asynq.Timeout(5*time.Minute))
 
 	return task, nil
 }
@@ -37,23 +41,47 @@ func (gt *GatewayTask) HandleDeployGatewayTask(ctx context.Context, task *asynq.
 
 	fmt.Println("processing task", task.ResultWriter().TaskID())
 
-	// invokeScript := "./script/init.sh"
+	invokeScript := "./scripts/invoke.sh"
+
+	cmd := exec.Command(invokeScript, payload.GatewayName, payload.GatewayType, payload.RPCURL, payload.Password, payload.TranscodingProfile)
+
+	var stdout, stderr bytes.Buffer
+
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+	if err != nil {
+		log.Printf("Command failed with error: %v, Stderr: %s", err, stderr.String())
+
+		log.Println(stdout.String())
+
+		return nil
+	}
+
+	// log.Println(stdout.String())
+
+	// taskId := task.ResultWriter().TaskID()
+
+	// var successResponse map[string]any
+	// var errorResponse map[string]any
+
+	// if err := json.Unmarshal(stderr.Bytes(), &errorResponse); err != nil {
 	//
-	// cmd := exec.Command(invokeScript, payload.GatewayName, payload.GatewayType, payload.RpcUrl, payload.Password, payload.TranscodingProfile)
+	// 	fmt.Println("Error unmarshaling JSON:", err)
 	//
-	// var stdout, stderr bytes.Buffer
-	//
-	// cmd.Stdout = &stdout
-	// cmd.Stderr = &stderr
-	//
-	// err := cmd.Run()
-	// if err != nil {
-	// 	log.Fatalf("Command failed with error: %v, Stderr: %s", err, stderr.String())
+	// 	return errors.New("error unmarshaling JSON")
 	// }
 	//
-	// // taskId := task.ResultWriter().TaskID()
+	// if err := json.Unmarshal(stdout.Bytes(), &successResponse); err != nil {
+	// 	fmt.Println("Error unmarshaling JSON:", err)
 	//
-	// fmt.Printf("Stdout: %s\n", stdout.String())
+	// 	return errors.New("error unmarshaling JSON")
+	// }
+	//
+	// // fmt.Printf("Stdout: %s\n", stdout.String())
+	//
+	// fmt.Println("json", successResponse["message"])
 
 	return nil
 }

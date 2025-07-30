@@ -34,7 +34,8 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 
-	Gateways []Gateway `json:"gateways" gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Gateways       []Gateway        `json:"gateways" gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	AWSCredentials []AWSCredentials `json:"aws_credentials" gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
 
 func (role *UserRole) Scan(value interface{}) error {
@@ -57,7 +58,7 @@ func (role UserRole) IsValid() bool {
 	return slices.Contains(Roles, role)
 }
 
-func (user *User) BeforeCreate(tx *gorm.DB) (err error) {
+func (user *User) BeforeCreate(db *gorm.DB) (err error) {
 	user.ID = uuid.New()
 
 	if !user.Role.IsValid() {

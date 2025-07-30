@@ -28,6 +28,8 @@ func NewDatabase(cfg *config.Config) *gorm.DB {
 	err = db.AutoMigrate(
 		&models.User{},
 		&models.Gateway{},
+		&models.AWSCredentials{},
+		&models.AWSRegion{},
 	)
 	if err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)

@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"gwid.io/gwid-core/internal/utils"
 )
 
 var defaultValidationMessages = map[string]string{
@@ -108,14 +109,18 @@ func ValidateRequestMiddleware[T any]() gin.HandlerFunc {
 
 		if err := c.ShouldBindJSON(&input); err != nil {
 			if validationErrors, ok := err.(validator.ValidationErrors); ok {
+
 				errors := make(map[string]string)
+
 				for _, fieldError := range validationErrors {
-					errors[strings.ToLower(fieldError.Field())] = getValidationMessage(fieldError)
+					errors[utils.ToSnakeCase(fieldError.Field())] = getValidationMessage(fieldError)
 				}
+
 				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 					"success": false,
 					"errors":  errors,
 				})
+
 				return
 			}
 
@@ -153,12 +158,12 @@ func getValidationMessage(fieldError validator.FieldError) string {
 	}
 
 	if template, ok := defaultValidationMessages[fieldError.Tag()]; ok {
-		result := strings.Replace(template, "{0}", strings.ToLower(fieldError.Field()), 1)
+		result := strings.Replace(template, "{0}", utils.ToSnakeCase(fieldError.Field()), 1)
 		if fieldError.Param() != "" {
 			result = strings.Replace(result, "{1}", fieldError.Param(), 1)
 		}
 		return result
 	}
 
-	return fmt.Sprintf("%s failed %s validation", strings.ToLower(fieldError.Field()), fieldError.Tag())
+	return fmt.Sprintf("%s failed %s validation", utils.ToSnakeCase(fieldError.Field()), fieldError.Tag())
 }

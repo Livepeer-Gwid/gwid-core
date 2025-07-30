@@ -19,8 +19,8 @@ func NewUserService(userRepository *repositories.UserRepository) *UserService {
 	}
 }
 
-func (s *UserService) GetCurrentUserProfile(userId uuid.UUID) (*models.User, error) {
-	user, result := s.userRepository.FindByID(userId)
+func (s *UserService) GetCurrentUserProfile(userID uuid.UUID) (*models.User, error) {
+	user, result := s.userRepository.FindByID(userID)
 
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		return nil, errors.New("user not found")

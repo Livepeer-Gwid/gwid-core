@@ -10,34 +10,28 @@ import (
 	"gwid.io/gwid-core/internal/types"
 )
 
-type GatewayController struct {
-	gatewayService *services.GatewayService
+type AWSCredentialsController struct {
+	awsCredentialsService *services.AWSCredentialsService
 }
 
-func NewGatewayController(gatewayService *services.GatewayService) *GatewayController {
-	return &GatewayController{
-		gatewayService: gatewayService,
+func NewAWSCredentialsController(awsCredentialsService *services.AWSCredentialsService) *AWSCredentialsController {
+	return &AWSCredentialsController{
+		awsCredentialsService: awsCredentialsService,
 	}
 }
 
-func (gc *GatewayController) CreateGateway(c *gin.Context) {
-	createGatewayReq := c.MustGet("validatedInput").(types.DeployGatewayPayloadReq)
+func (ac *AWSCredentialsController) CreateAWSCredentials(c *gin.Context) {
+	awsCredentialsReq := c.MustGet("validatedInput").(types.AWSCredentialsReq)
 
 	reqUser := c.MustGet("user").(*types.JwtCustomClaims)
 
-	gateway := models.Gateway{
-		Provider:           createGatewayReq.Provider,
-		Region:             createGatewayReq.Region,
-		GatewayName:        createGatewayReq.GatewayName,
-		GatewayType:        createGatewayReq.GatewayType,
-		RPCURL:             createGatewayReq.RPCURL,
-		Password:           createGatewayReq.Password,
-		TranscodingProfile: createGatewayReq.TranscodingProfile,
-		Status:             models.Initializing,
-		UserID:             reqUser.ID,
+	awsCredentials := models.AWSCredentials{
+		AccessKeyID:     awsCredentialsReq.AccessKeyID,
+		SecretAccessKey: awsCredentialsReq.SecretAccessKey,
+		UserID:          reqUser.ID,
 	}
 
-	statusCode, err := gc.gatewayService.CreateGateway(&gateway)
+	statusCode, err := ac.awsCredentialsService.CreateAWSCredentials(&awsCredentials)
 	if err != nil {
 		c.AbortWithStatusJSON(statusCode, gin.H{
 			"success": false,
@@ -47,13 +41,15 @@ func (gc *GatewayController) CreateGateway(c *gin.Context) {
 		return
 	}
 
+	awsCredentials.User = nil
+
 	c.JSON(statusCode, gin.H{
 		"success": true,
-		"data":    gateway,
+		"data":    awsCredentials,
 	})
 }
 
-func (gc *GatewayController) GetUserGateways(c *gin.Context) {
+func (ac *AWSCredentialsController) GetUserAWSCredentials(c *gin.Context) {
 	reqUser := c.MustGet("user").(*types.JwtCustomClaims)
 
 	params, exists := middleware.GetQueryParams(c)
@@ -62,7 +58,7 @@ func (gc *GatewayController) GetUserGateways(c *gin.Context) {
 		return
 	}
 
-	data, statusCode, err := gc.gatewayService.GetUserGateways(reqUser.ID, params)
+	data, statusCode, err := ac.awsCredentialsService.GetUserAWSCredentials(reqUser.ID, params)
 	if err != nil {
 		c.AbortWithStatusJSON(statusCode, gin.H{
 			"success": false,
@@ -72,7 +68,7 @@ func (gc *GatewayController) GetUserGateways(c *gin.Context) {
 		return
 	}
 
-	total, err := gc.gatewayService.GetUserGatewaysCount(reqUser.ID)
+	total, err := ac.awsCredentialsService.GetUserCredentialsCount(reqUser.ID)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 			"success": false,

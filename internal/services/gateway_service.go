@@ -4,12 +4,15 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/hibiken/asynq"
 	"gwid.io/gwid-core/internal/config"
+	"gwid.io/gwid-core/internal/middleware"
 	"gwid.io/gwid-core/internal/models"
 	"gwid.io/gwid-core/internal/repositories"
 	"gwid.io/gwid-core/internal/tasks"
 	"gwid.io/gwid-core/internal/types"
+	"gwid.io/gwid-core/internal/utils"
 )
 
 type GatewayService struct {
@@ -26,14 +29,16 @@ func NewGatewayService(cfg *config.Config, gatewayTask *tasks.GatewayTask, gatew
 	}
 }
 
-func (gs *GatewayService) getGatewayClient() *asynq.Client {
-	client := asynq.NewClient(asynq.RedisClientOpt{Addr: gs.cfg.RedisAddress})
+func (s *GatewayService) getGatewayClient() *asynq.Client {
+	client := asynq.NewClient(asynq.RedisClientOpt{Addr: s.cfg.RedisAddress})
 
 	return client
 }
 
-func (gs *GatewayService) CreateGateway(gateway *models.Gateway) (int, error) {
-	client := gs.getGatewayClient()
+func (s *GatewayService) CreateGateway(gateway *models.Gateway) (int, error) {
+	client := s.getGatewayClient()
+
+	gateway.GatewayName = utils.ToKebabCase(gateway.GatewayName)
 
 	payload := types.DeployGatewayPayload{
 		RPCURL:             gateway.RPCURL,
@@ -44,7 +49,7 @@ func (gs *GatewayService) CreateGateway(gateway *models.Gateway) (int, error) {
 		Provider:           gateway.Provider,
 	}
 
-	task, err := gs.gatewayTask.NewDeployGatewayTask(payload)
+	task, err := s.gatewayTask.NewDeployGatewayTask(payload)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -57,11 +62,29 @@ func (gs *GatewayService) CreateGateway(gateway *models.Gateway) (int, error) {
 	gateway.QueueID = info.ID
 	gateway.User = nil
 
-	if err := gs.gatewayRepository.CreateGateway(gateway); err != nil {
+	if err := s.gatewayRepository.CreateGateway(gateway); err != nil {
 		return http.StatusInternalServerError, errors.New("unable to create gateway")
 	}
 
 	defer client.Close()
 
 	return http.StatusCreated, nil
+}
+
+func (s *GatewayService) GetUserGateways(userID uuid.UUID, params *middleware.QueryParams) (*[]models.Gateway, int, error) {
+	gateways, err := s.gatewayRepository.GetUserGateways(userID, params)
+	if err != nil {
+		return nil, http.StatusInternalServerError, err
+	}
+
+	return gateways, http.StatusOK, nil
+}
+
+func (s *GatewayService) GetUserGatewaysCount(userID uuid.UUID) (int64, error) {
+	count, err := s.gatewayRepository.GetUserGatewaysCount(userID)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
 }
