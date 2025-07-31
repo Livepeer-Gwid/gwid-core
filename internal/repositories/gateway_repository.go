@@ -26,7 +26,7 @@ func (repo *GatewayRepository) CreateGateway(gateway *models.Gateway) error {
 func (repo *GatewayRepository) GetUserGateways(userID uuid.UUID, params *middleware.QueryParams) (*[]models.Gateway, error) {
 	var gateways []models.Gateway
 
-	result := repo.db.Offset(params.Offset).Limit(params.Limit).Order(params.Order).Where(&models.Gateway{UserID: userID}).Find(&gateways)
+	result := repo.db.Offset(params.Offset).Limit(params.Limit).Order(params.Sort + " " + params.Order).Where(&models.Gateway{UserID: userID}).Find(&gateways)
 
 	return &gateways, result.Error
 }

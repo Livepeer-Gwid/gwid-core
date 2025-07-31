@@ -42,7 +42,7 @@ func (repo *AWSCredentialsRepository) GetCredentialsByID(id uuid.UUID, userID uu
 func (repo *AWSCredentialsRepository) GetUserCredentials(userID uuid.UUID, params *middleware.QueryParams) (*[]models.AWSCredentials, error) {
 	var credentials []models.AWSCredentials
 
-	result := repo.db.Offset(params.Offset).Limit(params.Limit).Order(params.Order).Where(&models.AWSCredentials{UserID: userID}).Find(&credentials)
+	result := repo.db.Offset(params.Offset).Limit(params.Limit).Order(params.Sort + " " + params.Order).Where(&models.AWSCredentials{UserID: userID}).Find(&credentials)
 
 	return &credentials, result.Error
 }

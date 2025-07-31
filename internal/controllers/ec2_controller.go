@@ -1,13 +1,12 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"gwid.io/gwid-core/internal/middleware"
 	"gwid.io/gwid-core/internal/services"
-	"gwid.io/gwid-core/internal/types"
 )
 
 type EC2Controller struct {
@@ -21,7 +20,6 @@ func NewEC2Controller(ec2Service *services.EC2Service) *EC2Controller {
 }
 
 func (s *EC2Controller) GetEC2InstanceTypes(c *gin.Context) {
-	reqUser := c.MustGet("user").(*types.JwtCustomClaims)
 
 	params, exists := middleware.GetQueryParams(c)
 	if !exists {
@@ -29,17 +27,9 @@ func (s *EC2Controller) GetEC2InstanceTypes(c *gin.Context) {
 		return
 	}
 
-	credentialsID, err := uuid.Parse(params.Filters["credentials_id"])
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"error":   "invalid credentials ID",
-		})
+	fmt.Println(params.Order, params.Sort)
 
-		return
-	}
-
-	ec2, statusCode, err := s.ec2Service.GetEC2InstanceTypes(reqUser.ID, credentialsID, "eu-central-1")
+	ec2InstanceTypes, statusCode, err := s.ec2Service.GetEC2InstanceTypes(params)
 	if err != nil {
 		c.AbortWithStatusJSON(statusCode, gin.H{
 			"success": false,
@@ -51,6 +41,6 @@ func (s *EC2Controller) GetEC2InstanceTypes(c *gin.Context) {
 
 	c.JSON(statusCode, gin.H{
 		"success": true,
-		"data":    ec2,
+		"data":    ec2InstanceTypes,
 	})
 }

@@ -15,6 +15,8 @@ type Config struct {
 	JwtSecret          string
 	RedisAddress       string
 	EncryptionKey      string
+	AwsAccessID        string
+	AwsSecretAccessKey string
 	DevPostgresConfig  PostgresConfig
 	ProdPostgresConfig PostgresConfig
 }
@@ -34,12 +36,14 @@ func NewConfig() *Config {
 	}
 
 	env := &Config{
-		Environment:   GetEnv("ENVIRONMENT", "development"),
-		Port:          GetEnv("PORT", "5000"),
-		GinMode:       GetEnv("GIN_MODE", "debug"),
-		JwtSecret:     GetEnv("JWT_SECRET", "the-fallback-key"),
-		RedisAddress:  GetEnv("REDIS_ADDRESS", ""),
-		EncryptionKey: GetEnv("ENCRYPTION_KEY", ""),
+		Environment:        GetEnv("ENVIRONMENT", "development"),
+		Port:               GetEnv("PORT", "5000"),
+		GinMode:            GetEnv("GIN_MODE", "debug"),
+		JwtSecret:          GetEnv("JWT_SECRET", "the-fallback-key"),
+		RedisAddress:       GetEnv("REDIS_ADDRESS", ""),
+		EncryptionKey:      GetEnv("ENCRYPTION_KEY", ""),
+		AwsAccessID:        GetEnv("AWS_ACCESS_ID", ""),
+		AwsSecretAccessKey: GetEnv("AWS_SECRET_ACCESS_KEY", ""),
 		DevPostgresConfig: PostgresConfig{
 			Host:         GetEnv("DEV_DB_HOST", "localhost"),
 			Port:         GetEnv("DEV_DB_PORT", "5432"),

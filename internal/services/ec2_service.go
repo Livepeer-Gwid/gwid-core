@@ -1,54 +1,41 @@
 package services
 
 import (
-	"context"
-	"errors"
 	"net/http"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/credentials"
-	"github.com/aws/aws-sdk-go-v2/service/ec2"
-	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
-	"github.com/google/uuid"
+	"gwid.io/gwid-core/internal/middleware"
+	"gwid.io/gwid-core/internal/models"
+	"gwid.io/gwid-core/internal/repositories"
 )
 
 type EC2Service struct {
 	awsCredentialsService *AWSCredentialsService
+	ec2Repository         *repositories.EC2Repository
 }
 
-func NewEC2Service(awsCredentialsService *AWSCredentialsService) *EC2Service {
+func NewEC2Service(awsCredentialsService *AWSCredentialsService, ec2Repository *repositories.EC2Repository) *EC2Service {
 	return &EC2Service{
 		awsCredentialsService: awsCredentialsService,
+		ec2Repository:         ec2Repository,
 	}
 }
 
-func (s *EC2Service) GetEC2InstanceTypes(userID uuid.UUID, credentialsID uuid.UUID, region string) ([]types.InstanceTypeInfo, int, error) {
-	credential, statusCode, err := s.awsCredentialsService.GetAWSCredentialsByID(credentialsID, userID)
+func (s *EC2Service) GetEC2InstanceTypes(params *middleware.QueryParams) (*[]models.EC2, int, error) {
+	ec2Instances, err := s.ec2Repository.GetEC2InstancesTypes(params)
+
 	if err != nil {
-		return nil, statusCode, err
+		return nil, http.StatusInternalServerError, err
 	}
 
-	creds := credentials.NewStaticCredentialsProvider(credential.AccessKeyID, credential.SecretAccessKey, "")
+	return ec2Instances, http.StatusOK, nil
+}
 
-	cfg, err := config.LoadDefaultConfig(context.TODO(),
-		config.WithCredentialsProvider(creds),
-		config.WithRegion(region),
-	)
+func (s *EC2Service) GetEC2InstancesTypeCount() (int64, error) {
+	count, err := s.ec2Repository.GetEC2TotalCount()
+
 	if err != nil {
-		return nil, http.StatusInternalServerError, errors.New("unable to load aws config")
+		return 0, err
 	}
 
-	ec2Client := ec2.NewFromConfig(cfg)
-
-	output, err := ec2Client.DescribeInstanceTypes(context.TODO(), &ec2.DescribeInstanceTypesInput{
-		MaxResults: aws.Int32(10),
-	})
-	if err != nil {
-		return nil, http.StatusInternalServerError, errors.New("unable to get ec2 list")
-	}
-
-	ec2 := output.InstanceTypes
-
-	return ec2, http.StatusOK, nil
+	return count, nil
 }

@@ -22,6 +22,7 @@ func RunGwidCore() {
 			repositories.NewUserRepository,
 			repositories.NewGatewayRepository,
 			repositories.NewAWSCredentialsRepository,
+			repositories.NewEC2Repository,
 
 			services.NewAuthService,
 			services.NewJwtService,
@@ -42,6 +43,7 @@ func RunGwidCore() {
 			tasks.NewGatewayTask,
 
 			cron.NewCronService,
+			cron.NewEC2Cron,
 
 			router.NewRouter,
 			NewGinServer,

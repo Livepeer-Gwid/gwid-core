@@ -24,6 +24,8 @@ type QueryConfig struct {
 	DefaultLimit  int
 	MaxLimit      int
 	DefaultOrder  string
+	DefaultSort   string
+	AllowedSorts  []string
 	AllowedOrders []string
 	FilterPrefix  string
 }
@@ -33,8 +35,10 @@ func DefaultQueryConfig() QueryConfig {
 		DefaultPage:   1,
 		DefaultLimit:  10,
 		MaxLimit:      100,
-		DefaultOrder:  "created_at desc",
+		DefaultSort:   "created_at",
+		DefaultOrder:  "desc",
 		AllowedOrders: []string{"asc", "desc"},
+		AllowedSorts:  []string{"id", "created_at", "updated_at", "name"},
 		FilterPrefix:  "filter_",
 	}
 }
@@ -54,6 +58,7 @@ func QueryMiddleware(config ...QueryConfig) gin.HandlerFunc {
 		c.Set("page", params.Page)
 		c.Set("limit", params.Limit)
 		c.Set("offset", params.Offset)
+		c.Set("sort", params.Sort)
 		c.Set("order", params.Order)
 		c.Set("filters", params.Filters)
 		c.Set("fields", params.Fields)
@@ -90,6 +95,12 @@ func parseQueryParams(c *gin.Context, cfg QueryConfig) QueryParams {
 	}
 
 	params.Offset = (params.Page - 1) * params.Limit
+
+	if sort := c.Query("sort"); sort != "" {
+		params.Sort = sort
+	} else {
+		params.Sort = cfg.DefaultSort
+	}
 
 	if order := strings.ToLower(c.Query("order")); order != "" {
 		if isValidOrder(order, cfg.AllowedOrders) {
