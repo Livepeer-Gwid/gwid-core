@@ -38,7 +38,7 @@ func NewGatewayService(
 }
 
 func (s *GatewayService) getGatewayClient() *asynq.Client {
-	client := asynq.NewClient(asynq.RedisClientOpt{Addr: s.cfg.RedisAddress})
+	client := asynq.NewClient(asynq.RedisClientOpt{Addr: s.cfg.RedisAddress, Password: s.cfg.RedisPassword})
 
 	return client
 }

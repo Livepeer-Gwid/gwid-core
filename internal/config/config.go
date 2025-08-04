@@ -14,6 +14,7 @@ type Config struct {
 	GinMode            string
 	JwtSecret          string
 	RedisAddress       string
+	RedisPassword      string
 	EncryptionKey      string
 	AwsAccessID        string
 	AwsSecretAccessKey string
@@ -41,6 +42,7 @@ func NewConfig() *Config {
 		GinMode:            GetEnv("GIN_MODE", "debug"),
 		JwtSecret:          GetEnv("JWT_SECRET", "the-fallback-key"),
 		RedisAddress:       GetEnv("REDIS_ADDRESS", ""),
+		RedisPassword:      GetEnv("REDIS_PASSWORD", ""),
 		EncryptionKey:      GetEnv("ENCRYPTION_KEY", ""),
 		AwsAccessID:        GetEnv("AWS_ACCESS_ID", ""),
 		AwsSecretAccessKey: GetEnv("AWS_SECRET_ACCESS_KEY", ""),

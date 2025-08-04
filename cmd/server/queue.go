@@ -13,7 +13,7 @@ import (
 
 func RunQueueServer(lc fx.Lifecycle, cfg *config.Config, gatewayTask *tasks.GatewayTask) {
 	srv := asynq.NewServer(
-		asynq.RedisClientOpt{Addr: cfg.RedisAddress},
+		asynq.RedisClientOpt{Addr: cfg.RedisAddress, Password: cfg.RedisPassword},
 		asynq.Config{
 			Concurrency: 10,
 			Queues: map[string]int{
