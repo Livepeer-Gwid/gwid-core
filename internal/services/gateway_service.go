@@ -90,6 +90,8 @@ func (s *GatewayService) CreateGatewayWithAWS(createGatewayWithAWSReq types.Crea
 
 	gateway.InstanceID = &instanceID
 
+	fmt.Println(gateway.InstanceID)
+
 	return nil, 0, nil
 }
 
