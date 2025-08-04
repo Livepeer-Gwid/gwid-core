@@ -33,7 +33,7 @@ func (gc *GatewayController) CreateGateway(c *gin.Context) {
 		RPCURL:             createGatewayReq.RPCURL,
 		Password:           createGatewayReq.Password,
 		TranscodingProfile: createGatewayReq.TranscodingProfile,
-		Status:             models.Initializing,
+		Status:             models.GatewayInitializing,
 		UserID:             reqUser.ID,
 	}
 

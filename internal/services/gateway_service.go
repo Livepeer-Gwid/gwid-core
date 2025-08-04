@@ -117,7 +117,7 @@ func (s *GatewayService) CreateGateway(gateway *models.Gateway) (int, error) {
 		return http.StatusInternalServerError, errors.New("unable to queue task")
 	}
 
-	gateway.QueueID = info.ID
+	gateway.QueueID = &info.ID
 	gateway.User = nil
 
 	if err := s.gatewayRepository.CreateGateway(gateway); err != nil {

@@ -8,38 +8,38 @@ dev: tidy
 	@echo "Starting development server with hot-reloading..."
 	air -c .air.toml
 
-dev-docker:
-	docker compose up
+# dev-docker:
+# 	docker compose up
 
-down:
-	docker compose down
+# down:
+# 	docker compose down
 
-build:
-	docker compose build
+# build:
+# 	docker compose build
 
-logs:
-	docker compose logs -f
+# logs:
+# 	docker compose logs -f
 
 # logs-db:
 # 	docker compose logs -f postgres
 
-clean:
-	docker compose down -v --rmi all --remove-orphans
-	docker system prune -f
+# clean:
+# 	docker compose down -v --rmi all --remove-orphans
+# 	docker system prune -f
 
 tidy:
 	@echo "Tidying modules..."
 	go mod tidy
 	@echo "Tidy complete!"
 
-restart-gwid:
-	docker compose restart gwid
+# restart-gwid:
+# 	docker compose restart gwid
 
-shell:
-	docker compose exec gwid bash
+# shell:
+# 	docker compose exec gwid bash
 
 # db-shell:
 # 	docker compose exec postgres psql -U user -d gwid
 
-ps:
-	docker compose ps
+# ps:
+# 	docker compose ps
