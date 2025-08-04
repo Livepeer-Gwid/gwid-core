@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -19,13 +20,20 @@ type GatewayService struct {
 	cfg               *config.Config
 	gatewayTask       *tasks.GatewayTask
 	gatewayRepository *repositories.GatewayRepository
+	ec2Service        *EC2Service
 }
 
-func NewGatewayService(cfg *config.Config, gatewayTask *tasks.GatewayTask, gatewayRepository *repositories.GatewayRepository) *GatewayService {
+func NewGatewayService(
+	cfg *config.Config,
+	gatewayTask *tasks.GatewayTask,
+	gatewayRepository *repositories.GatewayRepository,
+	ec2Service *EC2Service,
+) *GatewayService {
 	return &GatewayService{
 		cfg:               cfg,
 		gatewayTask:       gatewayTask,
 		gatewayRepository: gatewayRepository,
+		ec2Service:        ec2Service,
 	}
 }
 
@@ -33,6 +41,56 @@ func (s *GatewayService) getGatewayClient() *asynq.Client {
 	client := asynq.NewClient(asynq.RedisClientOpt{Addr: s.cfg.RedisAddress})
 
 	return client
+}
+
+func (s *GatewayService) CreateGatewayWithAWS(createGatewayWithAWSReq types.CreateGatewayWithAWSReq, userID uuid.UUID) (any, int, error) {
+	formattedGatewayName := utils.ToKebabCase(createGatewayWithAWSReq.GatewayName)
+
+	_, result := s.gatewayRepository.GetGatewayByName(formattedGatewayName)
+
+	if result.RowsAffected > 0 {
+		return nil, http.StatusBadRequest, fmt.Errorf("%s already existis", createGatewayWithAWSReq.GatewayName)
+	}
+
+	gateway := models.Gateway{
+		Provider:           createGatewayWithAWSReq.Provider,
+		Region:             createGatewayWithAWSReq.Region,
+		GatewayName:        formattedGatewayName,
+		GatewayType:        createGatewayWithAWSReq.GatewayType,
+		RPCURL:             createGatewayWithAWSReq.RPCURL,
+		Password:           createGatewayWithAWSReq.Password,
+		TranscodingProfile: createGatewayWithAWSReq.TranscodingProfile,
+		UserID:             userID,
+	}
+
+	err := s.gatewayRepository.CreateGateway(&gateway)
+
+	if err != nil {
+		return nil, http.StatusInternalServerError, err
+	}
+
+	ec2InstancePayload := types.CreateEC2InstanceReq{
+		CredentialsID:     createGatewayWithAWSReq.CredentialsID,
+		EC2InstanceTypeID: createGatewayWithAWSReq.EC2InstanceTypeID,
+	}
+
+	instanceID, statusCode, err := s.ec2Service.CreateEC2Instance(ec2InstancePayload, userID)
+
+	if err != nil {
+		gateway.Status = models.GatewayFailed
+
+		err := s.gatewayRepository.UpdateRepository(&gateway)
+
+		if err != nil {
+			return nil, http.StatusInternalServerError, err
+		}
+
+		return nil, statusCode, err
+	}
+
+	gateway.InstanceID = &instanceID
+
+	return nil, 0, nil
 }
 
 func (s *GatewayService) CreateGateway(gateway *models.Gateway) (int, error) {

@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gwid.io/gwid-core/internal/middleware"
 	"gwid.io/gwid-core/internal/services"
+	"gwid.io/gwid-core/internal/types"
 )
 
 type EC2Controller struct {
@@ -20,7 +21,6 @@ func NewEC2Controller(ec2Service *services.EC2Service) *EC2Controller {
 }
 
 func (s *EC2Controller) GetEC2InstanceTypes(c *gin.Context) {
-
 	params, exists := middleware.GetQueryParams(c)
 	if !exists {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"success": false, "error": "failed to get query params"})
@@ -43,4 +43,26 @@ func (s *EC2Controller) GetEC2InstanceTypes(c *gin.Context) {
 		"success": true,
 		"data":    ec2InstanceTypes,
 	})
+}
+
+func (s *EC2Controller) CreateEC2Instance(c *gin.Context) {
+	ec2InstanceReq := c.MustGet("validatedInput").(types.CreateEC2InstanceReq)
+
+	reqUser := c.MustGet("user").(*types.JwtCustomClaims)
+
+	_, statusCode, err := s.ec2Service.CreateEC2Instance(ec2InstanceReq, reqUser.ID)
+
+	if err != nil {
+		c.AbortWithStatusJSON(statusCode, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(statusCode, gin.H{
+		"success": true,
+	})
+
 }

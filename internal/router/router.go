@@ -75,6 +75,7 @@ func NewRouter(
 	ec2.Use(middleware.AuthMiddleware())
 	{
 		ec2.GET("/", middleware.QueryMiddleware(), ec2Controller.GetEC2InstanceTypes)
+		ec2.POST("/", middleware.ValidateRequestMiddleware[types.CreateEC2InstanceReq](), ec2Controller.CreateEC2Instance)
 	}
 
 	return router

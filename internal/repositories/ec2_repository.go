@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gwid.io/gwid-core/internal/middleware"
 	"gwid.io/gwid-core/internal/models"
@@ -36,4 +37,12 @@ func (repo *EC2Repository) CreateEC2InstanceTypes(instances *[]models.EC2) error
 	result := repo.db.Create(instances)
 
 	return result.Error
+}
+
+func (repo *EC2Repository) GetEC2InstanceTypeByID(id uuid.UUID) (*models.EC2, *gorm.DB) {
+	var ec2InstanceType models.EC2
+
+	result := repo.db.Where(&models.EC2{ID: id}).First(&ec2InstanceType)
+
+	return &ec2InstanceType, result
 }

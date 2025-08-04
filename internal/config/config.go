@@ -52,6 +52,15 @@ func NewConfig() *Config {
 			DatabaseName: GetEnv("DEV_DB_NAME", "gwid"),
 			SSLMode:      GetEnv("DEV_DB_SSLMODE", "disable"),
 		},
+
+		ProdPostgresConfig: PostgresConfig{
+			Host:         GetEnv("PROD_DB_HOST", "localhost"),
+			Port:         GetEnv("PROD_DB_PORT", "5432"),
+			User:         GetEnv("PROD_DB_USER", "postgres"),
+			Password:     GetEnv("PROD_DB_PASSWORD", "postgres"),
+			DatabaseName: GetEnv("PROD_DB_NAME", "gwid"),
+			SSLMode:      GetEnv("PROD_DB_SSLMODE", "disable"),
+		},
 	}
 
 	return env

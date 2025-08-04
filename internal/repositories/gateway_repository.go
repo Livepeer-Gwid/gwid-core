@@ -40,3 +40,17 @@ func (repo *GatewayRepository) GetUserGatewaysCount(userID uuid.UUID) (int64, er
 }
 
 func (repo *GatewayRepository) GetGateway(id uuid.UUID) {}
+
+func (repo *GatewayRepository) GetGatewayByName(name string) (*models.Gateway, *gorm.DB) {
+	var gateway models.Gateway
+
+	result := repo.db.Where(&models.Gateway{GatewayName: name}).Find(&gateway)
+
+	return &gateway, result
+}
+
+func (repo *GatewayRepository) UpdateRepository(gateway *models.Gateway) error {
+	result := repo.db.Updates(&gateway)
+
+	return result.Error
+}
