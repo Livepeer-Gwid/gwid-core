@@ -33,3 +33,8 @@ type DeployGatewayPayloadReq struct {
 	DeployGatewayPayload
 	Region string `json:"region" binding:"required"`
 }
+
+type DeployAWSGatewayPayload struct {
+	GatewayID        uuid.UUID
+	UnhashedPassword string
+}

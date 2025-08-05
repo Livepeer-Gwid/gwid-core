@@ -39,7 +39,7 @@ func NewConfig() *Config {
 	env := &Config{
 		Environment:        GetEnv("ENVIRONMENT", "development"),
 		Port:               GetEnv("PORT", "5000"),
-		GinMode:            GetEnv("GIN_MODE", "debug"),
+		GinMode:            GetEnv("GIN_MODE", "release"),
 		JwtSecret:          GetEnv("JWT_SECRET", "the-fallback-key"),
 		RedisAddress:       GetEnv("REDIS_ADDRESS", ""),
 		RedisPassword:      GetEnv("REDIS_PASSWORD", ""),

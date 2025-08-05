@@ -43,6 +43,12 @@ func (s *GatewayService) getGatewayClient() *asynq.Client {
 	return client
 }
 
+func (s *GatewayService) getAsynqClient() *asynq.Client {
+	client := asynq.NewClient(asynq.RedisClientOpt{Addr: s.cfg.RedisAddress, Password: s.cfg.RedisPassword})
+
+	return client
+}
+
 func (s *GatewayService) CreateGatewayWithAWS(createGatewayWithAWSReq types.CreateGatewayWithAWSReq, userID uuid.UUID) (any, int, error) {
 	formattedGatewayName := utils.ToKebabCase(createGatewayWithAWSReq.GatewayName)
 
@@ -90,7 +96,7 @@ func (s *GatewayService) CreateGatewayWithAWS(createGatewayWithAWSReq types.Crea
 
 	gateway.InstanceID = &instanceID
 
-	fmt.Println(gateway.InstanceID)
+	client := s.getAsynqClient()
 
 	return nil, 0, nil
 }
