@@ -32,6 +32,18 @@ func (gt *GatewayTask) NewDeployGatewayTask(payload types.DeployGatewayPayload) 
 	return task, nil
 }
 
+func (gt *GatewayTask) NewAWSDeployGatewayTask(payload types.DeployAWSGatewayPayload) (*asynq.Task, error) {
+	payloadJson, err := json.Marshal(payload)
+
+	if err != nil {
+		return nil, err
+	}
+
+	task := asynq.NewTask(utils.TypeDeployAWSGateway, payloadJson, asynq.MaxRetry(2), asynq.Timeout(5*time.Minute))
+
+	return task, nil
+}
+
 func (gt *GatewayTask) HandleDeployGatewayTask(ctx context.Context, task *asynq.Task) error {
 	var payload types.DeployGatewayPayload
 

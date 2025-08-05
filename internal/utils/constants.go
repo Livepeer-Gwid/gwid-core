@@ -1,5 +1,6 @@
 package utils
 
 const (
-	TypeDeployGateway = "deploy:gateway"
+	TypeDeployGateway    = "deploy:gateway"
+	TypeDeployAWSGateway = "deploy:aws-gateway"
 )
