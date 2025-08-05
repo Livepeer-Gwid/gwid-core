@@ -96,7 +96,7 @@ func (s *GatewayService) CreateGatewayWithAWS(createGatewayWithAWSReq types.Crea
 
 	gateway.InstanceID = &instanceID
 
-	client := s.getAsynqClient()
+	// client := s.getAsynqClient()
 
 	return nil, 0, nil
 }
