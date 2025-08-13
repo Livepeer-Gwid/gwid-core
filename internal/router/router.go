@@ -55,7 +55,7 @@ func NewRouter(
 	gateway := router.Group("/api/v1/gateway")
 	gateway.Use(middleware.AuthMiddleware())
 	{
-		gateway.POST("/", middleware.ValidateRequestMiddleware[types.DeployGatewayPayloadReq](), gatewayController.CreateGateway)
+		gateway.POST("/aws", middleware.ValidateRequestMiddleware[types.CreateGatewayWithAWSReq](), gatewayController.CreateAWSGateway)
 	}
 
 	region := router.Group("/api/v1/region")
@@ -75,7 +75,6 @@ func NewRouter(
 	ec2.Use(middleware.AuthMiddleware())
 	{
 		ec2.GET("/", middleware.QueryMiddleware(), ec2Controller.GetEC2InstanceTypes)
-		ec2.POST("/", middleware.ValidateRequestMiddleware[types.CreateEC2InstanceReq](), ec2Controller.CreateEC2Instance)
 	}
 
 	return router
@@ -87,15 +86,17 @@ func setupRouteConfig(router *gin.Engine) {
 		log.Fatalln("router not initiated")
 	}
 
+	originRegex := regexp.MustCompile(`^https?:\/\/(localhost(:\d+)?|([a-zA-Z0-9-]+\.)?gwid\.io)$`)
+
 	router.Use(cors.New(cors.Config{
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
+		ExposeHeaders:    []string{"Content-Length", "Content-Type"},
 		AllowCredentials: true,
 		AllowOriginFunc: func(origin string) bool {
-			reg := regexp.MustCompile(`^(https://([a-zA-Z0-9-]+\.)*gwid\.io|http://localhost(:[0-9]+)?)$`)
-			return reg.MatchString(origin)
+			return originRegex.MatchString(origin)
 		},
+		// AllowOrigins: []string{"https://api.gwid.io", "http://localhost:3000"},
 		MaxAge: 12 * time.Hour,
 	}))
 

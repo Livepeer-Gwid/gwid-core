@@ -6,7 +6,7 @@ TMP_DIR = "tmp"
 
 dev: tidy
 	@echo "Starting development server with hot-reloading..."
-	air -c .air.toml
+	@air -c .air.toml
 
 # dev-docker:
 # 	docker compose up
@@ -29,7 +29,7 @@ dev: tidy
 
 tidy:
 	@echo "Tidying modules..."
-	go mod tidy
+	@go mod tidy
 	@echo "Tidy complete!"
 
 # restart-gwid:

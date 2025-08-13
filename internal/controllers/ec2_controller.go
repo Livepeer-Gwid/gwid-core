@@ -1,13 +1,11 @@
 package controllers
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"gwid.io/gwid-core/internal/middleware"
 	"gwid.io/gwid-core/internal/services"
-	"gwid.io/gwid-core/internal/types"
 )
 
 type EC2Controller struct {
@@ -27,8 +25,6 @@ func (s *EC2Controller) GetEC2InstanceTypes(c *gin.Context) {
 		return
 	}
 
-	fmt.Println(params.Order, params.Sort)
-
 	ec2InstanceTypes, statusCode, err := s.ec2Service.GetEC2InstanceTypes(params)
 	if err != nil {
 		c.AbortWithStatusJSON(statusCode, gin.H{
@@ -43,26 +39,4 @@ func (s *EC2Controller) GetEC2InstanceTypes(c *gin.Context) {
 		"success": true,
 		"data":    ec2InstanceTypes,
 	})
-}
-
-func (s *EC2Controller) CreateEC2Instance(c *gin.Context) {
-	ec2InstanceReq := c.MustGet("validatedInput").(types.CreateEC2InstanceReq)
-
-	reqUser := c.MustGet("user").(*types.JwtCustomClaims)
-
-	_, statusCode, err := s.ec2Service.CreateEC2Instance(ec2InstanceReq, reqUser.ID)
-
-	if err != nil {
-		c.AbortWithStatusJSON(statusCode, gin.H{
-			"success": false,
-			"error":   err.Error(),
-		})
-
-		return
-	}
-
-	c.JSON(statusCode, gin.H{
-		"success": true,
-	})
-
 }

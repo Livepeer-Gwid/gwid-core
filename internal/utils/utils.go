@@ -57,3 +57,17 @@ func ToSnakeCase(str string) string {
 
 	return result.String()
 }
+
+func SafeStringValue(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
+func SafeInt32Value(i *int32) int32 {
+	if i == nil {
+		return 0
+	}
+	return *i
+}

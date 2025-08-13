@@ -5,7 +5,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"gwid.io/gwid-core/internal/middleware"
-	"gwid.io/gwid-core/internal/models"
 	"gwid.io/gwid-core/internal/services"
 	"gwid.io/gwid-core/internal/types"
 )
@@ -20,24 +19,13 @@ func NewGatewayController(gatewayService *services.GatewayService) *GatewayContr
 	}
 }
 
-func (gc *GatewayController) CreateGateway(c *gin.Context) {
-	createGatewayReq := c.MustGet("validatedInput").(types.DeployGatewayPayloadReq)
+func (gc *GatewayController) CreateAWSGateway(c *gin.Context) {
+	createAWSGatewayReq := c.MustGet("validatedInput").(types.CreateGatewayWithAWSReq)
 
 	reqUser := c.MustGet("user").(*types.JwtCustomClaims)
 
-	gateway := models.Gateway{
-		Provider:           createGatewayReq.Provider,
-		Region:             createGatewayReq.Region,
-		GatewayName:        createGatewayReq.GatewayName,
-		GatewayType:        createGatewayReq.GatewayType,
-		RPCURL:             createGatewayReq.RPCURL,
-		Password:           createGatewayReq.Password,
-		TranscodingProfile: createGatewayReq.TranscodingProfile,
-		Status:             models.GatewayInitializing,
-		UserID:             reqUser.ID,
-	}
+	gateway, statusCode, err := gc.gatewayService.CreateGatewayWithAWS(createAWSGatewayReq, reqUser.ID)
 
-	statusCode, err := gc.gatewayService.CreateGateway(&gateway)
 	if err != nil {
 		c.AbortWithStatusJSON(statusCode, gin.H{
 			"success": false,

@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -66,7 +65,6 @@ func (s *AWSCredentialsService) CreateAWSCredentials(credentials *models.AWSCred
 	if encryptedSecretAccessKey, err := s.encryptionService.EncryptData([]byte(credentials.SecretAccessKey)); err != nil {
 		return http.StatusBadRequest, err
 	} else {
-		fmt.Println("sk", encryptedSecretAccessKey)
 		credentials.SecretAccessKey = encryptedSecretAccessKey
 	}
 
