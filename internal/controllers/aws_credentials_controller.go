@@ -29,6 +29,10 @@ func (ac *AWSCredentialsController) CreateAWSCredentials(c *gin.Context) {
 		AccessKeyID:     awsCredentialsReq.AccessKeyID,
 		SecretAccessKey: awsCredentialsReq.SecretAccessKey,
 		UserID:          reqUser.ID,
+		RoleName:        "",
+		RoleARN:         "",
+		ProfieName:      "",
+		ProfileARN:      "",
 	}
 
 	statusCode, err := ac.awsCredentialsService.CreateAWSCredentials(&awsCredentials)

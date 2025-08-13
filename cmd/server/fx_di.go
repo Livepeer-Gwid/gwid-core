@@ -9,7 +9,6 @@ import (
 	"gwid.io/gwid-core/internal/repositories"
 	"gwid.io/gwid-core/internal/router"
 	"gwid.io/gwid-core/internal/services"
-	"gwid.io/gwid-core/internal/tasks"
 )
 
 func RunGwidCore() {
@@ -32,6 +31,7 @@ func RunGwidCore() {
 			services.NewAWSCredentialsService,
 			services.NewEncryptionService,
 			services.NewEC2Service,
+			services.NewGatewayTaskService,
 
 			controllers.NewAuthController,
 			controllers.NewUserController,
@@ -39,8 +39,6 @@ func RunGwidCore() {
 			controllers.NewRegionController,
 			controllers.NewAWSCredentialsController,
 			controllers.NewEC2Controller,
-
-			tasks.NewGatewayTask,
 
 			cron.NewCronService,
 			cron.NewEC2Cron,

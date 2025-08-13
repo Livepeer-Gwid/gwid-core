@@ -11,36 +11,29 @@ import (
 	"gwid.io/gwid-core/internal/middleware"
 	"gwid.io/gwid-core/internal/models"
 	"gwid.io/gwid-core/internal/repositories"
-	"gwid.io/gwid-core/internal/tasks"
 	"gwid.io/gwid-core/internal/types"
 	"gwid.io/gwid-core/internal/utils"
 )
 
 type GatewayService struct {
-	cfg               *config.Config
-	gatewayTask       *tasks.GatewayTask
-	gatewayRepository *repositories.GatewayRepository
-	ec2Service        *EC2Service
+	cfg                *config.Config
+	gatewayTaskService *GatewayTaskService
+	gatewayRepository  *repositories.GatewayRepository
+	ec2Service         *EC2Service
 }
 
 func NewGatewayService(
 	cfg *config.Config,
-	gatewayTask *tasks.GatewayTask,
+	gatewayTaskService *GatewayTaskService,
 	gatewayRepository *repositories.GatewayRepository,
 	ec2Service *EC2Service,
 ) *GatewayService {
 	return &GatewayService{
-		cfg:               cfg,
-		gatewayTask:       gatewayTask,
-		gatewayRepository: gatewayRepository,
-		ec2Service:        ec2Service,
+		cfg:                cfg,
+		gatewayTaskService: gatewayTaskService,
+		gatewayRepository:  gatewayRepository,
+		ec2Service:         ec2Service,
 	}
-}
-
-func (s *GatewayService) getGatewayClient() *asynq.Client {
-	client := asynq.NewClient(asynq.RedisClientOpt{Addr: s.cfg.RedisAddress, Password: s.cfg.RedisPassword})
-
-	return client
 }
 
 func (s *GatewayService) getAsynqClient() *asynq.Client {
@@ -49,7 +42,7 @@ func (s *GatewayService) getAsynqClient() *asynq.Client {
 	return client
 }
 
-func (s *GatewayService) CreateGatewayWithAWS(createGatewayWithAWSReq types.CreateGatewayWithAWSReq, userID uuid.UUID) (any, int, error) {
+func (s *GatewayService) CreateGatewayWithAWS(createGatewayWithAWSReq types.CreateGatewayWithAWSReq, userID uuid.UUID) (*models.Gateway, int, error) {
 	formattedGatewayName := utils.ToKebabCase(createGatewayWithAWSReq.GatewayName)
 
 	_, result := s.gatewayRepository.GetGatewayByName(formattedGatewayName)
@@ -59,7 +52,7 @@ func (s *GatewayService) CreateGatewayWithAWS(createGatewayWithAWSReq types.Crea
 	}
 
 	gateway := models.Gateway{
-		Provider:           createGatewayWithAWSReq.Provider,
+		Provider:           "aws",
 		Region:             createGatewayWithAWSReq.Region,
 		GatewayName:        formattedGatewayName,
 		GatewayType:        createGatewayWithAWSReq.GatewayType,
@@ -67,6 +60,7 @@ func (s *GatewayService) CreateGatewayWithAWS(createGatewayWithAWSReq types.Crea
 		Password:           createGatewayWithAWSReq.Password,
 		TranscodingProfile: createGatewayWithAWSReq.TranscodingProfile,
 		UserID:             userID,
+		AWSCredentialsID:   createGatewayWithAWSReq.CredentialsID,
 	}
 
 	err := s.gatewayRepository.CreateGateway(&gateway)
@@ -78,6 +72,7 @@ func (s *GatewayService) CreateGatewayWithAWS(createGatewayWithAWSReq types.Crea
 	ec2InstancePayload := types.CreateEC2InstanceReq{
 		CredentialsID:     createGatewayWithAWSReq.CredentialsID,
 		EC2InstanceTypeID: createGatewayWithAWSReq.EC2InstanceTypeID,
+		InstanceName:      createGatewayWithAWSReq.GatewayName,
 	}
 
 	instanceID, statusCode, err := s.ec2Service.CreateEC2Instance(ec2InstancePayload, userID)
@@ -96,45 +91,36 @@ func (s *GatewayService) CreateGatewayWithAWS(createGatewayWithAWSReq types.Crea
 
 	gateway.InstanceID = &instanceID
 
-	// client := s.getAsynqClient()
+	client := s.getAsynqClient()
 
-	return nil, 0, nil
-}
-
-func (s *GatewayService) CreateGateway(gateway *models.Gateway) (int, error) {
-	client := s.getGatewayClient()
-
-	gateway.GatewayName = utils.ToKebabCase(gateway.GatewayName)
-
-	payload := types.DeployGatewayPayload{
-		RPCURL:             gateway.RPCURL,
-		Password:           gateway.Password,
-		GatewayType:        gateway.GatewayType,
-		GatewayName:        gateway.GatewayName,
-		TranscodingProfile: gateway.TranscodingProfile,
-		Provider:           gateway.Provider,
+	payload := types.DeployAWSGatewayPayload{
+		GatewayID:        gateway.ID,
+		UnhashedPassword: createGatewayWithAWSReq.Password,
+		CredentialsID:    gateway.AWSCredentialsID,
+		InstanceID:       instanceID,
+		UserID:           userID,
+		Region:           createGatewayWithAWSReq.Region,
 	}
 
-	task, err := s.gatewayTask.NewDeployGatewayTask(payload)
+	task, err := s.gatewayTaskService.NewAWSDeployGatewayTask(payload)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return nil, http.StatusInternalServerError, err
 	}
 
 	info, err := client.Enqueue(task)
 	if err != nil {
-		return http.StatusInternalServerError, errors.New("unable to queue task")
+		return nil, http.StatusInternalServerError, errors.New("unable to queue task")
 	}
 
 	gateway.QueueID = &info.ID
-	gateway.User = nil
 
-	if err := s.gatewayRepository.CreateGateway(gateway); err != nil {
-		return http.StatusInternalServerError, errors.New("unable to create gateway")
+	if err := s.gatewayRepository.UpdateRepository(&gateway); err != nil {
+		return nil, http.StatusInternalServerError, err
 	}
 
 	defer client.Close()
 
-	return http.StatusCreated, nil
+	return &gateway, http.StatusCreated, nil
 }
 
 func (s *GatewayService) GetUserGateways(userID uuid.UUID, params *middleware.QueryParams) (*[]models.Gateway, int, error) {

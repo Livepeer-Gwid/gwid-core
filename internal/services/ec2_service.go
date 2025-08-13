@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"sort"
 	"time"
@@ -13,12 +14,15 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	awsTypes "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	"github.com/aws/aws-sdk-go-v2/service/ssm"
+	ssmTypes "github.com/aws/aws-sdk-go-v2/service/ssm/types"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gwid.io/gwid-core/internal/middleware"
 	"gwid.io/gwid-core/internal/models"
 	"gwid.io/gwid-core/internal/repositories"
 	"gwid.io/gwid-core/internal/types"
+	"gwid.io/gwid-core/internal/utils"
 )
 
 type EC2Service struct {
@@ -126,7 +130,7 @@ func (s *EC2Service) CreateEC2Instance(ec2InstanceReq types.CreateEC2InstanceReq
 				Tags: []awsTypes.Tag{
 					{
 						Key:   aws.String("Name"),
-						Value: aws.String("gwid-gateway"),
+						Value: aws.String(utils.ToKebabCase(ec2InstanceReq.InstanceName)),
 					},
 				},
 			},
@@ -137,9 +141,110 @@ func (s *EC2Service) CreateEC2Instance(ec2InstanceReq types.CreateEC2InstanceReq
 		return "", http.StatusBadRequest, err
 	}
 
+	if len(instanceResult.Instances) == 0 {
+		return "", http.StatusInternalServerError, errors.New("no instance was created")
+	}
+
 	for _, instance := range instanceResult.Instances {
 		fmt.Printf("Created instance with ID: %s\n", *instance.InstanceId)
 	}
 
-	return "", 200, nil
+	return *instanceResult.Instances[0].InstanceId, 200, nil
+}
+
+func (s *EC2Service) WaitForInstanceRunning(instanceID string, ctx context.Context, ec2Client *ec2.Client) error {
+	waiter := ec2.NewInstanceRunningWaiter(ec2Client)
+
+	input := &ec2.DescribeInstancesInput{
+		InstanceIds: []string{instanceID},
+	}
+
+	err := waiter.Wait(ctx, input, 4*time.Minute)
+
+	if err != nil {
+		return err
+	}
+
+	result, err := ec2Client.DescribeInstances(ctx, input)
+	if err != nil {
+		return fmt.Errorf("failed to describe EC2 instance: %w", err)
+	}
+
+	if len(result.Reservations) == 0 || len(result.Reservations[0].Instances) == 0 {
+		return fmt.Errorf("instance %s not found", instanceID)
+	}
+
+	instance := result.Reservations[0].Instances[0]
+
+	if instance.IamInstanceProfile != nil {
+		return nil
+	} else {
+		return fmt.Errorf("no IAM instance profile attached")
+	}
+}
+
+func (s *EC2Service) RunCommand(instanceID string, ctx context.Context, command string, ssmClient *ssm.Client) (string, error) {
+	sendInput := &ssm.SendCommandInput{
+		InstanceIds:  []string{instanceID},
+		DocumentName: aws.String("AWS-RunShellScript"),
+		Parameters: map[string][]string{
+			"commands": {*aws.String(command)},
+		},
+		Comment: aws.String("Command executed via Go SDK"),
+	}
+
+	sendOutput, err := ssmClient.SendCommand(ctx, sendInput)
+	if err != nil {
+		return "", fmt.Errorf("failed to send command: %w", err)
+	}
+
+	commandID := *sendOutput.Command.CommandId
+
+	return commandID, nil
+}
+
+func (s *EC2Service) WaitForCommandCompletion(instanceID string, ctx context.Context, commandID string, ssmClient *ssm.Client) (*types.CommandResult, error) {
+	startTime := time.Now()
+	maxWaitTime := 5 * time.Minute
+	pollInterval := 2 * time.Second
+
+	for {
+		if time.Since(startTime) > maxWaitTime {
+			return nil, fmt.Errorf("command execution timed out after %v", maxWaitTime)
+		}
+
+		getInput := &ssm.GetCommandInvocationInput{
+			CommandId:  aws.String(commandID),
+			InstanceId: aws.String(instanceID),
+		}
+
+		output, err := ssmClient.GetCommandInvocation(ctx, getInput)
+
+		if err != nil {
+			log.Printf("waiting for command to start... %v", err)
+			time.Sleep(pollInterval)
+			continue
+		}
+
+		status := output.Status
+
+		log.Printf("Command status: %s", status)
+
+		if status == ssmTypes.CommandInvocationStatusInProgress ||
+			status == ssmTypes.CommandInvocationStatusPending {
+			time.Sleep(pollInterval)
+			continue
+		}
+
+		result := &types.CommandResult{
+			CommandID:     commandID,
+			Status:        string(status),
+			ExecutionTime: time.Since(startTime),
+			ExitCode:      utils.SafeInt32Value(&output.ResponseCode),
+			StandardOut:   utils.SafeStringValue(output.StandardOutputContent),
+			StandardErr:   utils.SafeStringValue(output.StandardErrorContent),
+		}
+
+		return result, nil
+	}
 }

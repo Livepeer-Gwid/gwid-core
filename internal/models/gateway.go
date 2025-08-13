@@ -31,11 +31,13 @@ type Gateway struct {
 	QueueID            *string       `json:"queue_id"`
 	InstanceID         *string       `json:"instance_id"`
 	UserID             uuid.UUID     `json:"user_id" gorm:"index"`
+	AWSCredentialsID   uuid.UUID     `json:"aws_credentials_id" gorm:"index"`
 
 	CreatedAt time.Time `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt time.Time `json:"updated_at" gorm:"autoUpdateTime"`
 
-	User *User `json:"user" gorm:"foreignKey.UserID"`
+	User           *User           `json:"user" gorm:"foreignKey.UserID"`
+	AWSCredentials *AWSCredentials `json:"aws_credentials" gorm:"foreignKey.AWSCredentialsID"`
 }
 
 func (gateway *Gateway) BeforeCreate(tx *gorm.DB) (err error) {
