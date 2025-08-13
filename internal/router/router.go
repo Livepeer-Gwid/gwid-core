@@ -2,7 +2,6 @@
 package router
 
 import (
-	"log"
 	"net/http"
 	"regexp"
 	"time"
@@ -81,10 +80,10 @@ func NewRouter(
 }
 
 func setupRouteConfig(router *gin.Engine) {
-	err := router.SetTrustedProxies([]string{"127.0.0.1", "::1"})
-	if err != nil {
-		log.Fatalln("router not initiated")
-	}
+	// err := router.SetTrustedProxies([]string{"127.0.0.1", "::1"})
+	// if err != nil {
+	// 	log.Fatalln("router not initiated")
+	// }
 
 	originRegex := regexp.MustCompile(`^https?:\/\/(localhost(:\d+)?|([a-zA-Z0-9-]+\.)?gwid\.io)$`)
 
