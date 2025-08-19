@@ -68,13 +68,13 @@ func NewRouter(
 	awsCredentials.Use(middleware.AuthMiddleware())
 	{
 		awsCredentials.POST("/", middleware.ValidateRequestMiddleware[types.AWSCredentialsReq](), awsCredentialsController.CreateAWSCredentials)
-		awsCredentials.GET("/", middleware.QueryMiddleware(), awsCredentialsController.GetUserAWSCredentials)
+		awsCredentials.GET("", middleware.QueryMiddleware(), awsCredentialsController.GetUserAWSCredentials)
 	}
 
 	ec2 := router.Group("/api/v1/ec2")
 	ec2.Use(middleware.AuthMiddleware())
 	{
-		ec2.GET("/", middleware.QueryMiddleware(), ec2Controller.GetEC2InstanceTypes)
+		ec2.GET("", middleware.QueryMiddleware(), ec2Controller.GetEC2InstanceTypes)
 	}
 
 	return router
