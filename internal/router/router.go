@@ -4,6 +4,7 @@ package router
 import (
 	"log"
 	"net/http"
+	"regexp"
 	"time"
 
 	"github.com/dvwright/xss-mw"
@@ -85,16 +86,16 @@ func setupRouteConfig(router *gin.Engine) {
 		log.Fatalln("router not initiated")
 	}
 
-	// originRegex := regexp.MustCompile(`^https?:\/\/(localhost(:\d+)?|([a-zA-Z0-9-]+\.)?gwid\.io)$`)
+	originRegex := regexp.MustCompile(`^https?:\/\/(localhost(:\d+)?|([a-zA-Z0-9-]+\.)?gwid\.io)$`)
 
 	router.Use(cors.New(cors.Config{
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length", "Content-Type"},
 		AllowCredentials: true,
-		// AllowOriginFunc: func(origin string) bool {
-		// 	return originRegex.MatchString(origin)
-		// },
+		AllowOriginFunc: func(origin string) bool {
+			return originRegex.MatchString(origin)
+		},
 		// AllowOrigins: []string{"https://gwid.io", "https://app.gwid.io", "http://localhost:3000"},
 		MaxAge: 12 * time.Hour,
 	}))
