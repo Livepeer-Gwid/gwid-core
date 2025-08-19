@@ -96,9 +96,11 @@ func setupRouteConfig(router *gin.Engine) {
 		AllowOriginFunc: func(origin string) bool {
 			return originRegex.MatchString(origin)
 		},
-		// AllowOrigins: []string{"https://gwid.io", "https://app.gwid.io", "http://localhost:3000"},
 		MaxAge: 12 * time.Hour,
 	}))
+
+	router.RedirectFixedPath = false
+	router.RedirectTrailingSlash = false
 
 	router.Use(middleware.RateLimitMiddleware())
 
