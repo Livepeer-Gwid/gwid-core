@@ -100,6 +100,9 @@ func setupRouteConfig(router *gin.Engine) {
 		MaxAge: 12 * time.Hour,
 	}))
 
+	router.RedirectFixedPath = false
+	router.RedirectTrailingSlash = false
+
 	router.Use(middleware.RateLimitMiddleware())
 
 	var xssMdlwr xss.XssMw
