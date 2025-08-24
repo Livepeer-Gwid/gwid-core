@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"log"
@@ -119,11 +120,17 @@ func (s *EC2Service) CreateEC2Instance(ec2InstanceReq types.CreateEC2InstanceReq
 		return "", http.StatusInternalServerError, err
 	}
 
+	userDataEncoded := base64.StdEncoding.EncodeToString([]byte(types.EC2UserData))
+
 	instanceResult, err := ec2Client.RunInstances(context.TODO(), &ec2.RunInstancesInput{
 		ImageId:      aws.String(imageID),
 		InstanceType: awsTypes.InstanceType(ec2InstanceType.Tag),
 		MinCount:     aws.Int32(1),
 		MaxCount:     aws.Int32(1),
+		UserData:     aws.String(userDataEncoded),
+		IamInstanceProfile: &awsTypes.IamInstanceProfileSpecification{
+			Name: aws.String(userCreds.ProfieName),
+		},
 		TagSpecifications: []awsTypes.TagSpecification{
 			{
 				ResourceType: awsTypes.ResourceTypeInstance,
@@ -183,10 +190,41 @@ func (s *EC2Service) WaitForInstanceRunning(instanceID string, ctx context.Conte
 	}
 }
 
+func (s *EC2Service) WaitForSSM(instanceID string, ctx context.Context, ssmClient *ssm.Client) error {
+	ssmReady := false
+
+	for range 30 {
+		out, _ := ssmClient.DescribeInstanceInformation(ctx, &ssm.DescribeInstanceInformationInput{})
+		for _, inst := range out.InstanceInformationList {
+			if *inst.InstanceId == instanceID && inst.PingStatus == "Online" {
+				ssmReady = true
+				break
+			}
+		}
+		if ssmReady {
+			break
+		}
+		fmt.Println("⏳ Waiting for SSM agent to be online...")
+		time.Sleep(10 * time.Second)
+	}
+
+	if !ssmReady {
+		return errors.New("ssm agent not online")
+	}
+
+	return nil
+}
+
 func (s *EC2Service) RunCommand(instanceID string, ctx context.Context, command string, ssmClient *ssm.Client) (string, error) {
 	sendInput := &ssm.SendCommandInput{
-		InstanceIds:  []string{instanceID},
-		DocumentName: aws.String("AWS-RunShellScript"),
+		// InstanceIds:  []string{instanceID},
+
+		Targets: []ssmTypes.Target{
+			{
+				Key:    aws.String("instanceIds"),
+				Values: []string{instanceID},
+			},
+		}, DocumentName: aws.String("AWS-RunShellScript"),
 		Parameters: map[string][]string{
 			"commands": {*aws.String(command)},
 		},

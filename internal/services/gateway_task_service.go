@@ -73,9 +73,13 @@ func (gt *GatewayTaskService) HandleAWSDeployGatewayTask(ctx context.Context, ta
 		return fmt.Errorf("unable to get instance running state: %v: %w", err, asynq.SkipRetry)
 	}
 
-	// cmd := `echo "{\"success\": true, \"grafana_url\": \"https://gwid.io\"}"`
+	if err := gt.ec2Service.WaitForSSM(payload.InstanceID, ctx, ssmClient); err != nil {
+		return fmt.Errorf("%v: %w", err, asynq.SkipRetry)
+	}
 
-	command := "ls -la /home && echo 'Hello from EC2!' && date"
+	command := `echo "{\"success\": true, \"grafana_url\": \"https://gwid.io\"}"`
+
+	// command := "ls -la /home && echo 'Hello from EC2!' && date"
 
 	commandID, err := gt.ec2Service.RunCommand(payload.InstanceID, ctx, command, ssmClient)
 

@@ -16,10 +16,12 @@ import (
 )
 
 type GatewayService struct {
-	cfg                *config.Config
-	gatewayTaskService *GatewayTaskService
-	gatewayRepository  *repositories.GatewayRepository
-	ec2Service         *EC2Service
+	cfg                      *config.Config
+	gatewayTaskService       *GatewayTaskService
+	gatewayRepository        *repositories.GatewayRepository
+	ec2Service               *EC2Service
+	awsCredentialsRepository *repositories.AWSCredentialsRepository
+	ec2Repository            *repositories.EC2Repository
 }
 
 func NewGatewayService(
@@ -27,12 +29,16 @@ func NewGatewayService(
 	gatewayTaskService *GatewayTaskService,
 	gatewayRepository *repositories.GatewayRepository,
 	ec2Service *EC2Service,
+	awsCredentialsRepository *repositories.AWSCredentialsRepository,
+	ec2Repository *repositories.EC2Repository,
 ) *GatewayService {
 	return &GatewayService{
-		cfg:                cfg,
-		gatewayTaskService: gatewayTaskService,
-		gatewayRepository:  gatewayRepository,
-		ec2Service:         ec2Service,
+		cfg:                      cfg,
+		gatewayTaskService:       gatewayTaskService,
+		gatewayRepository:        gatewayRepository,
+		ec2Service:               ec2Service,
+		awsCredentialsRepository: awsCredentialsRepository,
+		ec2Repository:            ec2Repository,
 	}
 }
 
@@ -45,10 +51,16 @@ func (s *GatewayService) getAsynqClient() *asynq.Client {
 func (s *GatewayService) CreateGatewayWithAWS(createGatewayWithAWSReq types.CreateGatewayWithAWSReq, userID uuid.UUID) (*models.Gateway, int, error) {
 	formattedGatewayName := utils.ToKebabCase(createGatewayWithAWSReq.GatewayName)
 
-	_, result := s.gatewayRepository.GetGatewayByName(formattedGatewayName)
-
-	if result.RowsAffected > 0 {
+	if _, result := s.gatewayRepository.GetGatewayByName(formattedGatewayName); result.RowsAffected > 0 {
 		return nil, http.StatusBadRequest, fmt.Errorf("%s already existis", createGatewayWithAWSReq.GatewayName)
+	}
+
+	if _, result := s.awsCredentialsRepository.GetCredentialsByID(createGatewayWithAWSReq.CredentialsID, userID); result.RowsAffected == 0 {
+		return nil, http.StatusNotFound, errors.New("aws credentials not found")
+	}
+
+	if _, result := s.ec2Repository.GetEC2InstanceTypeByID(createGatewayWithAWSReq.EC2InstanceTypeID); result.RowsAffected == 0 {
+		return nil, http.StatusNotFound, errors.New("ec2 instance type not found")
 	}
 
 	gateway := models.Gateway{
