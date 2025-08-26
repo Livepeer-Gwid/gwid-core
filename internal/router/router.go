@@ -67,7 +67,7 @@ func NewRouter(
 	awsCredentials := router.Group("/api/v1/aws-credentials")
 	awsCredentials.Use(middleware.AuthMiddleware())
 	{
-		awsCredentials.POST("/", middleware.ValidateRequestMiddleware[types.AWSCredentialsReq](), awsCredentialsController.CreateAWSCredentials)
+		awsCredentials.POST("", middleware.ValidateRequestMiddleware[types.AWSCredentialsReq](), awsCredentialsController.CreateAWSCredentials)
 		awsCredentials.GET("", middleware.QueryMiddleware(), awsCredentialsController.GetUserAWSCredentials)
 	}
 
