@@ -30,7 +30,6 @@ func NewGatewayTaskService(awsCredentialsService *AWSCredentialsService, ec2Serv
 
 func (gt *GatewayTaskService) NewAWSDeployGatewayTask(payload types.DeployAWSGatewayPayload) (*asynq.Task, error) {
 	payloadJson, err := json.Marshal(payload)
-
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +49,6 @@ func (gt *GatewayTaskService) HandleAWSDeployGatewayTask(ctx context.Context, ta
 	log.Println("processing task", task.ResultWriter().TaskID())
 
 	userCreds, _, err := gt.awsCredentialsService.GetAWSCredentialsByID(payload.CredentialsID, payload.UserID)
-
 	if err != nil {
 		return fmt.Errorf("unable to get user AWS credentials: %v: %w", err, asynq.SkipRetry)
 	}
@@ -82,13 +80,11 @@ func (gt *GatewayTaskService) HandleAWSDeployGatewayTask(ctx context.Context, ta
 	// command := "ls -la /home && echo 'Hello from EC2!' && date"
 
 	commandID, err := gt.ec2Service.RunCommand(payload.InstanceID, ctx, command, ssmClient)
-
 	if err != nil {
 		return fmt.Errorf("something went wrong: %v: %w", err, asynq.SkipRetry)
 	}
 
 	commandResult, err := gt.ec2Service.WaitForCommandCompletion(payload.InstanceID, ctx, commandID, ssmClient)
-
 	if err != nil {
 		fmt.Println(err)
 		return fmt.Errorf("something went wrong with command execution: %v: %w", err, asynq.SkipRetry)

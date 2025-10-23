@@ -92,7 +92,7 @@ func (s *GatewayService) CreateGatewayWithAWS(createGatewayWithAWSReq types.Crea
 	if err != nil {
 		gateway.Status = models.GatewayFailed
 
-		err := s.gatewayRepository.UpdateRepository(&gateway)
+		err := s.gatewayRepository.UpdateGateway(&gateway)
 
 		if err != nil {
 			return nil, http.StatusInternalServerError, err
@@ -126,7 +126,7 @@ func (s *GatewayService) CreateGatewayWithAWS(createGatewayWithAWSReq types.Crea
 
 	gateway.QueueID = &info.ID
 
-	if err := s.gatewayRepository.UpdateRepository(&gateway); err != nil {
+	if err := s.gatewayRepository.UpdateGateway(&gateway); err != nil {
 		return nil, http.StatusInternalServerError, err
 	}
 
@@ -152,3 +152,5 @@ func (s *GatewayService) GetUserGatewaysCount(userID uuid.UUID) (int64, error) {
 
 	return count, nil
 }
+
+func (s *GatewayService) GetGatewayByInstanceID(instanceID string) {}

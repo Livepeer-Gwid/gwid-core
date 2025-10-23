@@ -40,7 +40,6 @@ func NewEC2Service(awsCredentialsService *AWSCredentialsService, ec2Repository *
 
 func (s *EC2Service) GetEC2InstanceTypes(params *middleware.QueryParams) (*[]models.EC2, int, error) {
 	ec2Instances, err := s.ec2Repository.GetEC2InstancesTypes(params)
-
 	if err != nil {
 		return nil, http.StatusInternalServerError, err
 	}
@@ -50,7 +49,6 @@ func (s *EC2Service) GetEC2InstanceTypes(params *middleware.QueryParams) (*[]mod
 
 func (s *EC2Service) GetEC2InstancesTypeCount() (int64, error) {
 	count, err := s.ec2Repository.GetEC2TotalCount()
-
 	if err != nil {
 		return 0, err
 	}
@@ -91,7 +89,6 @@ func (s *EC2Service) GetUbuntuImageID(ec2Client *ec2.Client) (string, error) {
 
 func (s *EC2Service) CreateEC2Instance(ec2InstanceReq types.CreateEC2InstanceReq, userID uuid.UUID) (string, int, error) {
 	userCreds, int, err := s.awsCredentialsService.GetAWSCredentialsByID(ec2InstanceReq.CredentialsID, userID)
-
 	if err != nil {
 		return "", int, err
 	}
@@ -115,7 +112,6 @@ func (s *EC2Service) CreateEC2Instance(ec2InstanceReq types.CreateEC2InstanceReq
 	ec2Client := ec2.NewFromConfig(cfg)
 
 	imageID, err := s.GetUbuntuImageID(ec2Client)
-
 	if err != nil {
 		return "", http.StatusInternalServerError, err
 	}
@@ -143,7 +139,6 @@ func (s *EC2Service) CreateEC2Instance(ec2InstanceReq types.CreateEC2InstanceReq
 			},
 		},
 	})
-
 	if err != nil {
 		return "", http.StatusBadRequest, err
 	}
@@ -167,7 +162,6 @@ func (s *EC2Service) WaitForInstanceRunning(instanceID string, ctx context.Conte
 	}
 
 	err := waiter.Wait(ctx, input, 4*time.Minute)
-
 	if err != nil {
 		return err
 	}
@@ -257,7 +251,6 @@ func (s *EC2Service) WaitForCommandCompletion(instanceID string, ctx context.Con
 		}
 
 		output, err := ssmClient.GetCommandInvocation(ctx, getInput)
-
 		if err != nil {
 			log.Printf("waiting for command to start... %v", err)
 			time.Sleep(pollInterval)
@@ -285,4 +278,38 @@ func (s *EC2Service) WaitForCommandCompletion(instanceID string, ctx context.Con
 
 		return result, nil
 	}
+}
+
+func (s *EC2Service) TerminateInstance(instanceID string, ctx context.Context, ec2Client *ec2.Client) error {
+	if _, err := ec2Client.TerminateInstances(ctx, &ec2.TerminateInstancesInput{
+		InstanceIds: []string{instanceID},
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *EC2Service) GetEC2IPAddress(instanceID string, ctx context.Context, ec2Client *ec2.Client) (string, error) {
+	input := &ec2.DescribeInstancesInput{
+		InstanceIds: []string{instanceID},
+	}
+
+	result, err := ec2Client.DescribeInstances(context.TODO(), input)
+	if err != nil {
+		return "", fmt.Errorf("failed to describe instance: %w", err)
+	}
+
+	if len(result.Reservations) > 0 && len(result.Reservations[0].Instances) > 0 {
+		instance := result.Reservations[0].Instances[0]
+
+		if instance.PublicIpAddress != nil {
+			return *instance.PublicIpAddress, nil
+		}
+
+	} else {
+		return "", fmt.Errorf("no instance found with ID: %s", instanceID)
+	}
+
+	return "", errors.New("unable to retrieve ip address")
 }

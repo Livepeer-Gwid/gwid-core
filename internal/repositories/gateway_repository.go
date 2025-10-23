@@ -49,7 +49,15 @@ func (repo *GatewayRepository) GetGatewayByName(name string) (*models.Gateway, *
 	return &gateway, result
 }
 
-func (repo *GatewayRepository) UpdateRepository(gateway *models.Gateway) error {
+func (repo *GatewayRepository) GetGatewayByInstanceID(instanceID string) (*models.Gateway, *gorm.DB) {
+	var gateway models.Gateway
+
+	result := repo.db.Where(&models.Gateway{InstanceID: &instanceID}).Find(&gateway)
+
+	return &gateway, result
+}
+
+func (repo *GatewayRepository) UpdateGateway(gateway *models.Gateway) error {
 	result := repo.db.Updates(&gateway)
 
 	return result.Error
