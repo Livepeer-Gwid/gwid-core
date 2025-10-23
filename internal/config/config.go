@@ -20,6 +20,8 @@ type Config struct {
 	AwsSecretAccessKey string
 	DevPostgresConfig  PostgresConfig
 	ProdPostgresConfig PostgresConfig
+	CloudflareAPIToken string
+	CloudflareZoneName string
 }
 
 type PostgresConfig struct {
@@ -46,6 +48,8 @@ func NewConfig() *Config {
 		EncryptionKey:      GetEnv("ENCRYPTION_KEY", ""),
 		AwsAccessID:        GetEnv("AWS_ACCESS_ID", ""),
 		AwsSecretAccessKey: GetEnv("AWS_SECRET_ACCESS_KEY", ""),
+		CloudflareAPIToken: GetEnv("CF_API_TOKEN", ""),
+		CloudflareZoneName: GetEnv("CF_ZONE_NAME", ""),
 		DevPostgresConfig: PostgresConfig{
 			Host:         GetEnv("DEV_DB_HOST", "localhost"),
 			Port:         GetEnv("DEV_DB_PORT", "5432"),
