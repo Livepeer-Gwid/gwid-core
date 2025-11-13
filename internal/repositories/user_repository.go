@@ -36,3 +36,17 @@ func (repo *UserRepository) FindByID(id uuid.UUID) (*models.User, *gorm.DB) {
 
 	return &user, result
 }
+
+func (repo *UserRepository) FindByReferralCode(referralCode string) (*models.User, *gorm.DB) {
+	var user models.User
+
+	result := repo.db.Where(&models.User{ReferralCode: referralCode}).First(&user)
+
+	return &user, result
+}
+
+func (repo *UserRepository) UpdateUser(user *models.User) *gorm.DB {
+	result := repo.db.Save(user)
+
+	return result
+}

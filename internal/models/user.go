@@ -25,17 +25,19 @@ var Roles = []UserRole{
 }
 
 type User struct {
-	ID       uuid.UUID `json:"id" gorm:"type:uuid;primary_key;"`
-	Name     string    `json:"name" gorm:"not null"`
-	Email    string    `json:"email" gorm:"not null;uniqueIndex"`
-	Password string    `json:"-" gorm:"not null"`
-	Role     UserRole  `json:"role" gorm:"default:'regular'"`
+	ID           uuid.UUID `json:"id" gorm:"type:uuid;primary_key;"`
+	Name         string    `json:"name" gorm:"not null"`
+	Email        string    `json:"email" gorm:"not null;uniqueIndex"`
+	Password     string    `json:"-" gorm:"not null"`
+	Role         UserRole  `json:"role" gorm:"default:'regular'"`
+	ReferralCode string    `json:"referral_code" gorm:"uniqueIndex"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 
-	Gateways       []Gateway        `json:"gateways" gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	AWSCredentials []AWSCredentials `json:"aws_credentials" gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Gateways        []Gateway        `json:"gateways" gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	AWSCredentials  []AWSCredentials `json:"aws_credentials" gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	ReferralRewards []ReferralReward `json:"referral_rewards" gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
 
 func (role *UserRole) Scan(value interface{}) error {
@@ -69,7 +71,9 @@ func (user *User) BeforeCreate(db *gorm.DB) (err error) {
 		return errors.New("cannot set admin role")
 	}
 
-	user.HashPassword(user.Password)
+	if err := user.HashPassword(user.Password); err != nil {
+		return err
+	}
 
 	return nil
 }

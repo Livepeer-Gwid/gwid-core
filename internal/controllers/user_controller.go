@@ -36,3 +36,25 @@ func (s *UserController) GetCurrentUserProfile(c *gin.Context) {
 		"data":    user,
 	})
 }
+
+func (s *UserController) UpdateUserProfile(c *gin.Context) {
+	reqUser := c.MustGet("user").(*types.JwtCustomClaims)
+
+	updateProfileReq := c.MustGet("validatedInput").(types.UpdateProfileReq)
+
+	user, statusCode, err := s.userService.UpdateUserProfile(updateProfileReq, reqUser.ID)
+	if err != nil {
+
+		c.AbortWithStatusJSON(statusCode, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(statusCode, gin.H{
+		"success": true,
+		"data":    user,
+	})
+}
