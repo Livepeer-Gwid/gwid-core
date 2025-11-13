@@ -22,6 +22,7 @@ func RunGwidCore() {
 			repositories.NewGatewayRepository,
 			repositories.NewAWSCredentialsRepository,
 			repositories.NewEC2Repository,
+			repositories.NewReferralRewardRepository,
 
 			services.NewAuthService,
 			services.NewJwtService,
@@ -32,6 +33,7 @@ func RunGwidCore() {
 			services.NewEncryptionService,
 			services.NewEC2Service,
 			services.NewGatewayTaskService,
+			services.NewReferralRewardService,
 
 			controllers.NewAuthController,
 			controllers.NewUserController,

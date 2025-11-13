@@ -31,6 +31,7 @@ func NewDatabase(cfg *config.Config) *gorm.DB {
 		&models.AWSCredentials{},
 		&models.AWSRegion{},
 		&models.EC2{},
+		&models.ReferralReward{},
 	)
 	if err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)

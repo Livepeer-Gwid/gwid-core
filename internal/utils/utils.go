@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"crypto/rand"
+	"math/big"
 	"strings"
 	"unicode"
 )
@@ -70,4 +72,25 @@ func SafeInt32Value(i *int32) int32 {
 		return 0
 	}
 	return *i
+}
+
+func GenerateReferralCode() (string, error) {
+	const length = 6
+
+	const charset = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+
+	charsetLen := big.NewInt(int64(len(charset)))
+
+	var builder strings.Builder
+	builder.Grow(length)
+
+	for range length {
+		idx, err := rand.Int(rand.Reader, charsetLen)
+		if err != nil {
+			return "", err
+		}
+		builder.WriteByte(charset[idx.Int64()])
+	}
+
+	return builder.String(), nil
 }

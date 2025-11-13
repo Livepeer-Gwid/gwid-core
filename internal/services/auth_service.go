@@ -3,7 +3,9 @@ package services
 
 import (
 	"errors"
+	"net/http"
 
+	"github.com/google/uuid"
 	"gwid.io/gwid-core/internal/models"
 	"gwid.io/gwid-core/internal/repositories"
 	"gwid.io/gwid-core/internal/types"
@@ -60,4 +62,26 @@ func (s *AuthService) Login(loginReq types.LoginReq) (types.AuthRes, error) {
 		Role:        string(user.Role),
 		AccessToken: tokenString,
 	}, err
+}
+
+func (s *AuthService) ChangePassword(changePasswordReq types.ChangePasswordReq, userID uuid.UUID) (int, error) {
+	user, result := s.userRepository.FindByID(userID)
+
+	if result.RowsAffected == 0 {
+		return http.StatusNotFound, errors.New("user not found")
+	}
+
+	if err := user.CheckPassword(changePasswordReq.CurrentPassword); err != nil {
+		return http.StatusBadRequest, errors.New("invalid current password")
+	}
+
+	if err := user.HashPassword(changePasswordReq.NewPassword); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	if result := s.userRepository.UpdateUser(user); result.RowsAffected == 0 {
+		return http.StatusInternalServerError, errors.New("unable to change password")
+	}
+
+	return http.StatusOK, nil
 }

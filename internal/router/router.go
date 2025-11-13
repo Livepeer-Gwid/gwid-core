@@ -43,12 +43,14 @@ func NewRouter(
 	{
 		auth.POST("/signup", middleware.ValidateRequestMiddleware[types.SignupReq](), authController.SignUp)
 		auth.POST("/login", middleware.ValidateRequestMiddleware[types.LoginReq](), authController.Login)
+		auth.PATCH("/change-password", middleware.AuthMiddleware(), middleware.ValidateRequestMiddleware[types.ChangePasswordReq](), authController.ChangePassword)
 	}
 
 	user := router.Group("/api/v1/user")
 	user.Use(middleware.AuthMiddleware())
 	{
 		user.GET("/profile", userController.GetCurrentUserProfile)
+		user.PATCH("/profile", middleware.ValidateRequestMiddleware[types.UpdateProfileReq](), userController.UpdateUserProfile)
 		user.GET("/gateway", middleware.QueryMiddleware(), gatewayController.GetUserGateways)
 	}
 

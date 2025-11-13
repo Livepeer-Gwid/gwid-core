@@ -9,12 +9,18 @@ type AuthRes struct {
 }
 
 type SignupReq struct {
-	Name     string `json:"name" binding:"required,min=2,max=30"`
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=8"`
+	Name         string  `json:"name" binding:"required,min=2,max=30"`
+	Email        string  `json:"email" binding:"required,email"`
+	Password     string  `json:"password" binding:"required,min=8"`
+	ReferralCode *string `json:"referral_code"`
 }
 
 type LoginReq struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required"`
+}
+
+type ChangePasswordReq struct {
+	CurrentPassword string `json:"current_password" binding:"required"`
+	NewPassword     string `json:"new_password" binding:"required,min=8"`
 }
