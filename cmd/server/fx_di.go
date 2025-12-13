@@ -34,6 +34,7 @@ func RunGwidCore() {
 			services.NewEC2Service,
 			services.NewGatewayTaskService,
 			services.NewReferralRewardService,
+			services.NewCloudflareService,
 
 			controllers.NewAuthController,
 			controllers.NewUserController,

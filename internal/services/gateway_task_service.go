@@ -19,12 +19,14 @@ import (
 type GatewayTaskService struct {
 	awsCredentialsService *AWSCredentialsService
 	ec2Service            *EC2Service
+	cloudflareService     *CloudflareService
 }
 
-func NewGatewayTaskService(awsCredentialsService *AWSCredentialsService, ec2Service *EC2Service) *GatewayTaskService {
+func NewGatewayTaskService(awsCredentialsService *AWSCredentialsService, ec2Service *EC2Service, cloudflareService *CloudflareService) *GatewayTaskService {
 	return &GatewayTaskService{
 		awsCredentialsService: awsCredentialsService,
 		ec2Service:            ec2Service,
+		cloudflareService:     cloudflareService,
 	}
 }
 
@@ -71,11 +73,48 @@ func (gt *GatewayTaskService) HandleAWSDeployGatewayTask(ctx context.Context, ta
 		return fmt.Errorf("unable to get instance running state: %v: %w", err, asynq.SkipRetry)
 	}
 
+	ipAddress, err := gt.ec2Service.GetEC2IPAddress(payload.InstanceID, ctx, ec2Client)
+	if err != nil {
+		return fmt.Errorf("unable to get ec2 IP address", err, asynq.SkipRetry)
+	}
+
+	result, err := gt.cloudflareService.AddGatewayToCloudflare(ipAddress, payload.GatewayName)
+	if err != nil {
+		return fmt.Errorf("unable to add gateway to cloudflare", err, asynq.SkipRetry)
+	}
+
+	fmt.Println(result)
+
 	if err := gt.ec2Service.WaitForSSM(payload.InstanceID, ctx, ssmClient); err != nil {
 		return fmt.Errorf("%v: %w", err, asynq.SkipRetry)
 	}
 
-	command := `echo "{\"success\": true, \"grafana_url\": \"https://gwid.io\"}"`
+	generatedEncryptionKey, err := utils.GenerateKey32Bytes()
+	if err != nil {
+		return fmt.Errorf("unable to generate encryptionKey", err, asynq.SkipRetry)
+	}
+
+	subdomain := fmt.Sprintf("%s.gwid-gateway.link", payload.GatewayName)
+	databaseName := "gwid-sub"
+	walletAddress := ""
+	password := payload.UnhashedPassword
+	repoURL := "https://github.com/Livepeer-Gwid/gwid-sub.git"
+	encryptionKey := generatedEncryptionKey
+	gatewayName := payload.GatewayName
+
+	command := fmt.Sprintf(`
+		sudo apt update -y
+
+		sudo apt install -y git
+
+  	git clone "https://github.com/Livepeer-Gwid/gwid-setup-scripts.git"
+
+		cd "gwid-setup-scripts"
+
+		chmod +x *.sh
+
+		./setup-server.sh %s %s %s %s %s %s %s
+	`, subdomain, repoURL, encryptionKey, databaseName, gatewayName, walletAddress, password)
 
 	// command := "ls -la /home && echo 'Hello from EC2!' && date"
 

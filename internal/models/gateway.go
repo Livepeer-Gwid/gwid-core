@@ -29,6 +29,7 @@ type Gateway struct {
 	TranscodingProfile string        `json:"transcoding_profile" gorm:"not null"`
 	Status             GatewayStatus `json:"status" gorm:"default:'initializing';not null"`
 	ErrorStatus        string        `json:"error_status"`
+	PortalURL          *string       `json:"portal_url"`
 	QueueID            *string       `json:"queue_id"`
 	InstanceID         *string       `json:"instance_id"`
 	UserID             uuid.UUID     `json:"user_id" gorm:"index"`

@@ -27,4 +27,5 @@ type DeployAWSGatewayPayload struct {
 	UserID           uuid.UUID
 	UnhashedPassword string
 	Region           string
+	GatewayName      string
 }

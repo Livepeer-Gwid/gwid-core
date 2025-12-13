@@ -76,7 +76,6 @@ func (s *GatewayService) CreateGatewayWithAWS(createGatewayWithAWSReq types.Crea
 	}
 
 	err := s.gatewayRepository.CreateGateway(&gateway)
-
 	if err != nil {
 		return nil, http.StatusInternalServerError, err
 	}
@@ -88,12 +87,10 @@ func (s *GatewayService) CreateGatewayWithAWS(createGatewayWithAWSReq types.Crea
 	}
 
 	instanceID, statusCode, err := s.ec2Service.CreateEC2Instance(ec2InstancePayload, userID)
-
 	if err != nil {
 		gateway.Status = models.GatewayFailed
 
 		err := s.gatewayRepository.UpdateGateway(&gateway)
-
 		if err != nil {
 			return nil, http.StatusInternalServerError, err
 		}
@@ -112,6 +109,7 @@ func (s *GatewayService) CreateGatewayWithAWS(createGatewayWithAWSReq types.Crea
 		InstanceID:       instanceID,
 		UserID:           userID,
 		Region:           createGatewayWithAWSReq.Region,
+		GatewayName:      gateway.GatewayName,
 	}
 
 	task, err := s.gatewayTaskService.NewAWSDeployGatewayTask(payload)
